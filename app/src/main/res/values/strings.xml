@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">SpaceX Api</string>
+    <string name="launch_type">%</string>
+    <string name="launch_num">%</string>
+</resources>
