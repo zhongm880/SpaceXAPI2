@@ -1,48 +1,60 @@
 package com.example.spacexapi.view.adapter
 
-import android.app.Activity
-import android.app.AlertDialog
 import android.content.Context
-import android.content.Intent
+import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.example.spacexapi.R
 import com.example.spacexapi.databinding.ItemLaunchDataBinding
 import com.example.spacexapi.model.LaunchesResponse
-import com.example.spacexapi.view.LaunchListActivity
+import com.example.spacexapi.util.Constants.Companion.getTodayFromDays
+import com.example.spacexapi.util.Constants.Companion.parseUTCDate
+import com.squareup.picasso.Picasso
+import java.text.SimpleDateFormat
+import java.util.*
 
-class SpaceXAdapter(val activity: Activity, var launchList: List<LaunchesResponse>, val context: Context): RecyclerView.Adapter<SpaceXAdapter.LaunchViewHolder>() {
+private const val TAG = "SpaceXAdapter"
+class SpaceXAdapter(var launchList: LaunchesResponse?, val context: Context) :
+    RecyclerView.Adapter<SpaceXAdapter.LaunchViewHolder>() {
 
-    class LaunchViewHolder(val binding: ItemLaunchDataBinding): RecyclerView.ViewHolder(binding.root)
-
-    private var compName: String? = "SpaceX"
+    class LaunchViewHolder(val binding: ItemLaunchDataBinding) :
+        RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LaunchViewHolder {
-        val binding = ItemLaunchDataBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding =
+            ItemLaunchDataBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return LaunchViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: LaunchViewHolder, position: Int) {
-        val launchResponseData = launchList[position]
-
-        holder.binding.apply {
-            tvDate.text = launchResponseData[position].launch_date_utc
-            tvLaunchStatus.text = launchResponseData[position].flight_number.toString()
-            //intent to alert button for choosing links
-            cvItem.setOnClickListener {
-                val detailIntent = Intent(activity, LaunchListActivity::class.java)
-                detailIntent.putExtra("detailPosition", position)
-                detailIntent.putExtra("articleLink", launchResponseData[position].links.article_link.toString())
-                activity.startActivity(detailIntent)
+        launchList?.let {
+            val launchResponseData = it[position]
+            holder.binding.apply {
+                tvLaunchDate.text = parseUTCDate(launchResponseData.launch_date_utc)
+                tvLaunchMission.text = launchResponseData.flight_number.toString()
+                tvLaunchRocket.text = context.getString(
+                    R.string.tv_launch_rocket,
+                    launchResponseData.rocket.rocket_name,
+                    launchResponseData.rocket.rocket_type
+                )
+                tvLaunchDays.text = getTodayFromDays(launchResponseData.launch_date_unix)
+                if (launchResponseData.launch_success)
+                    ivLaunchSuccess.visibility = View.VISIBLE
+                else
+                    ivLaunchSuccess.visibility = View.INVISIBLE
+                Picasso.get().load(launchResponseData.links.mission_patch)
+                    .placeholder(R.drawable.ic_baseline_directions_bus_filled_24)
+                    .into(ivPatchImage)
             }
         }
     }
 
-    override fun getItemCount(): Int = launchList.size
+    override fun getItemCount(): Int = launchList?.size ?: 0
 
-    fun updateList(launchList: LaunchesResponse){
-
-        this.launchList = listOf(launchList)
+    fun updateList(launchList: LaunchesResponse) {
+        this.launchList = launchList
         notifyDataSetChanged()
     }
 

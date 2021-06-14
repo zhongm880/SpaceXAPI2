@@ -1,5 +1,6 @@
 package com.example.spacexapi.network
 
+import com.example.spacexapi.model.CompanyResponse
 import com.example.spacexapi.util.Constants.Companion.URL
 import com.example.spacexapi.model.LaunchesResponse
 import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
@@ -27,6 +28,6 @@ class SpaceXRepository {
             .build()
     }
 
-    fun getLaunchData(flightnum: Int): Deferred<LaunchesResponse> = launchAPI.getLaunchDataAsync(flightnum)
-
+    fun getLaunchData(year: String?): Deferred<LaunchesResponse> = launchAPI.getLaunchDataAsync(year)
+    fun getCompanyData(): Deferred<CompanyResponse> = launchAPI.getInfoAsync()
 }

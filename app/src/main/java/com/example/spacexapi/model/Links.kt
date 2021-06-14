@@ -1,9 +1,9 @@
 package com.example.capgemini_spacex.model.data
 
 data class Links(
-    val article_link: Any,
-    val flickr_images: List<Any>,
-    val mission_patch: Any,
+    val article_link: String,
+    val flickr_images: List<String>,
+    val mission_patch: String,//
     val mission_patch_small: Any,
     val presskit: Any,
     val reddit_campaign: Any,

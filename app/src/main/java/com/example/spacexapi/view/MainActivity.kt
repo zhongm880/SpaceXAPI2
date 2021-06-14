@@ -1,38 +1,89 @@
 package com.example.spacexapi.view
 
-import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.lifecycle.lifecycleScope
-import com.example.spacexapi.viewmodel.LaunchViewModel
+import android.util.Log
+import android.view.Menu
+import android.widget.SearchView
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.spacexapi.R
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import java.util.*
+import com.example.spacexapi.viewmodel.LaunchViewModel
+import com.example.spacexapi.databinding.ActivityMainBinding
+import com.example.spacexapi.model.CompanyResponse
+import com.example.spacexapi.view.adapter.SpaceXAdapter
+
+private const val TAG = "MainActivity"
 
 class MainActivity : AppCompatActivity() {
 
-    private var job: Job? = null
+    private val spaceXAdapter = SpaceXAdapter(null, this)
+
+    private val viewModel: LaunchViewModel by lazy {
+        LaunchViewModel.LaunchViewModelFactory().create(LaunchViewModel::class.java)
+    }
+
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        btn_search.setOnClickListener {
-            getLaunch()
-            val launchIntent = Intent(this, LaunchListActivity::class.java)
-            launchIntent.putExtra("company_name", et_company_name.text.toString().capitalize(Locale.getDefault()))
-            startActivity(launchIntent)
-        }
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        initialize()
+        viewModel.launchLiveData.observe(this, {
+            spaceXAdapter.updateList(it)
+        })
+        viewModel.companyLiveData.observe(this, {
+            updateCompanyData(it)
+        })
     }
 
-    private fun getLaunch() {
-        val flightNum = 1
-        job = lifecycleScope.launch(Dispatchers.Main){
-            LaunchViewModel.getLaunchData(flightNum)
-        }
-
+    private fun updateCompanyData(companyResponse: CompanyResponse) {
+        binding.tvDescribe.text = getString(
+            R.string.tv_data_company,
+            companyResponse.name,
+            companyResponse.founder,
+            companyResponse.founded.toString(),
+            companyResponse.employees.toString(),
+            companyResponse.launch_sites.toString(),
+            companyResponse.valuation.toString()
+        )
     }
+
+    private fun initialize() {
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.apply {
+            title = "SpaceX"
+        }
+        binding.launchesRecyclerview.layoutManager = LinearLayoutManager(this)
+        binding.launchesRecyclerview.adapter = spaceXAdapter
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu, menu)
+        val actionMenu = menu?.findItem(R.id.filter)
+        val searchView = actionMenu?.actionView as SearchView
+        searchView.setOnQueryTextListener(
+            object : SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(query: String?): Boolean {
+                    Log.d(TAG, "onQueryTextSubmit: $query")
+                    viewModel.searchByYear(query)
+                    if (!searchView.isIconified)
+                        searchView.isIconified = true
+                    actionMenu.collapseActionView()
+                    return false
+                }
+                override fun onQueryTextChange(newText: String?): Boolean {
+                    return false
+                }
+            }
+        )
+        return true
+    }
+
+//    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+//        when(item.itemId){
+//            android.R.id.home -> onBackPressed()
+//        }
+//        return super.onOptionsItemSelected(item)
+//    }
 }
